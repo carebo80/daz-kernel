@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DaZ Kernel – Preview</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; line-height: 1.35; }
+    h1,h2,h3 { margin: 0.6em 0 0.3em; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 14px; }
+    label { display:block; font-size: 12px; color: #444; margin-bottom: 4px; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; }
+    button { padding: 10px 14px; border: 0; border-radius: 10px; cursor: pointer; }
+    .row { display:flex; gap:10px; align-items:flex-end; }
+    .row > div { flex:1; }
+    table { width:100%; border-collapse: collapse; }
+    th,td { border-bottom: 1px solid #eee; padding: 8px; vertical-align: top; }
+    code { background:#f6f6f6; padding:2px 6px; border-radius:6px; }
+    details { margin-top: 10px; }
+    .role { font-weight: 600; }
+    .muted { color: #666; font-size: 12px; }
+    .pill { display:inline-block; padding:2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; margin-right: 6px; }
+  </style>
+</head>
+
+<body>
+  <h1>DaZ Kernel – Plan Unit Preview</h1>
+  <p class="muted">Minimal-Preview: Parameter → Plan → Sichtkontrolle → später DOCX-Export.</p>
+
+  <div class="card">
+    <form method="post" action="/preview">
+      <div class="row">
+        <div>
+          <label>Thema</label>
+          <input name="topic" value="{{ form.topic }}" />
+        </div>
+        <div>
+          <label>Niveau</label>
+          <input name="level" value="{{ form.level }}" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>Start</label>
+          <input name="time_start" value="{{ form.time_start }}" />
+        </div>
+        <div>
+          <label>Ende</label>
+          <input name="time_end" value="{{ form.time_end }}" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>Text-Terms (Komma-getrennt)</label>
+          <input name="text_terms" value="{{ form.text_terms }}" />
+        </div>
+        <div>
+          <label>Ollama Modell</label>
+          <input name="ollama_model" value="{{ form.ollama_model }}" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>top_k</label>
+          <input name="top_k" value="{{ form.top_k }}" />
+        </div>
+        <div>
+          <label>A2 stark (true/false)</label>
+          <input name="strong_group" value="{{ form.strong_group }}" />
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <button type="submit">Preview erzeugen</button>
+      </div>
+    </form>
+  </div>
+
+  {% if unit %}
+    <h2 style="margin-top:18px;">{{ unit.unit_title }}</h2>
+    <p>
+      <span class="pill">{{ unit.meta.level }}</span>
+      <span class="pill">{{ unit.meta.topic }}</span>
+      <span class="pill">{{ unit.meta.time_start }}–{{ unit.meta.time_end }}</span>
+      <span class="pill">Ollama: {{ unit.meta.ollama_model }}</span>
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Sprachmittel</h3>
+
+        <h4>Wortschatz</h4>
+        <ul>
+          {% for v in unit.language_support.vocabulary %}
+            <li><b>{{ v.word }}</b> – {{ v.note }}</li>
+          {% endfor %}
+        </ul>
+
+        <h4>Redemittel</h4>
+        <ul>
+          {% for p in unit.language_support.phrases %}
+            <li>{{ p.de }} <span class="muted">({{ p.function }})</span></li>
+          {% endfor %}
+        </ul>
+
+        <h4>Grammatik-Fokus</h4>
+        <ul>
+          {% for g in unit.language_support.grammar_focus %}
+            <li><b>{{ g.topic }}</b>
+              <ul>
+                {% for ex in g.examples %}
+                  <li>{{ ex }}</li>
+                {% endfor %}
+              </ul>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="card">
+        <h3>Mini-Dialoge</h3>
+        {% if unit.language_support.mini_dialogues and unit.language_support.mini_dialogues|length > 0 %}
+          {% for d in unit.language_support.mini_dialogues %}
+            <h4>{{ d.title }}</h4>
+            <ul>
+              {% for line in d.lines %}
+                <li><span class="role">{{ line.role }}:</span> {{ line.text }}</li>
+              {% endfor %}
+            </ul>
+          {% endfor %}
+        {% else %}
+          <p class="muted">Keine Dialoge vorhanden.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3>Phasenplan</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Min</th>
+            <th>Ziel</th>
+            <th>Aktivität</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ph in unit.phases %}
+            <tr>
+              <td>{{ ph.phase }}</td>
+              <td>{{ ph.minutes }}</td>
+              <td>{{ ph.aim }}</td>
+              <td>{{ ph.activity }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3>Materialien</h3>
+      <ul>
+        {% for m in unit.materials %}
+          <li><b>{{ m["type"] }}</b>: {{ m["items"]|join(", ") }}</li>
+        {% endfor %}
+      </ul>
+
+      <details>
+        <summary><b>GeR-Belege anzeigen</b></summary>
+        <pre style="white-space: pre-wrap;">{{ unit.ger.answer }}</pre>
+      </details>
+    </div>
+
+  {% endif %}
+</body>
+</html>
