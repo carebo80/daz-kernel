@@ -3,8 +3,13 @@
 __pycache__/
 *.pyc
 
-# Env
+# Env / Secrets
 .env
+.env.*
+
+# IDE
+.vscode/
+.idea/
 
 # Docs / Daten
 docs/ger/
@@ -13,3 +18,7 @@ docs/ger/
 
 # Logs
 *.log
+
+# Test / Typecheck
+.pytest_cache/
+.mypy_cache/
