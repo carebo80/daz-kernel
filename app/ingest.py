@@ -1,5 +1,6 @@
 import os
 import glob
+import sys
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -72,10 +73,13 @@ def main():
     if not db_url:
         raise RuntimeError("DATABASE_URL fehlt in .env")
 
-    docs_dir = os.path.join(os.getcwd(), "docs")
+    # Optional: Pfad per CLI, sonst default ./docs
+    docs_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.getcwd(), "docs")
+    docs_dir = os.path.abspath(docs_dir)
+
     pdfs = sorted(glob.glob(os.path.join(docs_dir, "**/*.pdf"), recursive=True))
     if not pdfs:
-        print("Keine PDFs in docs/ gefunden.")
+        print(f"Keine PDFs in {docs_dir} gefunden.")
         return
 
     print(f"Embedding Model: {model_name}")

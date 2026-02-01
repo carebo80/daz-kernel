@@ -32,8 +32,18 @@
     <form method="post" action="/preview">
       <div class="row">
         <div>
-          <label>Thema</label>
-          <input name="topic" value="{{ form.topic }}" />
+          <label>Thema:</label>
+          <select name="topic">
+
+            {% for slug, title in topics %}
+
+            <option value="{{ slug }}" {% if slug==form.topic %}selected{% endif %}>
+              {{ title }}
+            </option>
+
+            {% endfor %}
+
+          </select>
         </div>
         <div>
           <label>Niveau</label>

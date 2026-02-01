@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DaZ Kernel – Unit Preview</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            margin: 16px;
+            line-height: 1.35;
+        }
+
+        .card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+        }
+
+        .h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 0 8px;
+        }
+
+        .meta {
+            color: #374151;
+            font-size: 14px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        @media (min-width: 800px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #f3f4f6;
+            font-size: 12px;
+            margin-right: 6px;
+        }
+
+        .list {
+            margin: 8px 0 0 18px;
+        }
+
+        .muted {
+            color: #6b7280;
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+
+        .phase-title {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <div class="h1">{{ unit.title or "Unterrichtseinheit" }}</div>
+        <div class="meta">
+            <span class="badge">{{ unit.level }}</span>
+            {% if unit.topic %}<span class="badge">{{ unit.topic }}</span>{% endif %}
+            {% if unit.time_start or unit.time_end %}<span class="badge">{{ unit.time_start }}–{{ unit.time_end
+                }}</span>{% endif %}
+            {% if unit.strong_group %}<span class="badge">starke Gruppe</span>{% endif %}
+        </div>
+        {% if unit.notes %}
+        <p class="muted">{{ unit.notes }}</p>
+        {% endif %}
+        <p class="muted" style="margin-top:10px;">
+            ID: <span class="mono">{{ unit.id }}</span>
+        </p>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <div class="h1">Feinplanung</div>
+
+            {% set phases = (unit.plan.get("phases") if unit.plan else None) %}
+            {% if phases %}
+            <ol class="list">
+                {% for p in phases %}
+                <li style="margin-bottom:10px;">
+                    <div class="phase-title">{{ p.get("phase","(Phase)") }}</div>
+                    {% if p.get("minutes") %}<div class="muted">{{ p.get("minutes") }} Min.</div>{% endif %}
+                    {% if p.get("aim") %}<div><b>Ziel:</b> {{ p.get("aim") }}</div>{% endif %}
+                    {% if p.get("goal") %}<div><b>Ziel:</b> {{ p.get("goal") }}</div>{% endif %}
+                    {% if p.get("activity") %}<div><b>Ablauf:</b> {{ p.get("activity") }}</div>{% endif %}
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <p class="muted">Keine Phasen im Plan gespeichert (plan.phases fehlt).</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="h1">Sprachmittel</div>
+
+            {% set ls = unit.language_support or {} %}
+
+            {% if ls.get("vocabulary") %}
+            <div><b>Wortschatz</b></div>
+            <ul class="list">
+                {% for w in ls.get("vocabulary") %}
+                <li>{{ w.get("word") }}{% if w.get("note") %} – <span class="muted">{{ w.get("note") }}</span>{% endif
+                    %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if ls.get("phrases") %}
+            <div style="margin-top:10px;"><b>Redemittel</b></div>
+            <ul class="list">
+                {% for ph in ls.get("phrases") %}
+                <li>{{ ph.get("de") }}{% if ph.get("function") %} – <span class="muted">{{ ph.get("function")
+                        }}</span>{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if ls.get("grammar_focus") %}
+            <div style="margin-top:10px;"><b>Grammatik-Fokus</b></div>
+            <ul class="list">
+                {% for g in ls.get("grammar_focus") %}
+                <li>
+                    {{ g.get("topic") }}
+                    {% if g.get("examples") %}
+                    <div class="muted">{{ g.get("examples")|join(" · ") }}</div>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if ls.get("mini_dialogues") %}
+            <div style="margin-top:10px;"><b>Mini-Dialoge</b></div>
+            {% for d in ls.get("mini_dialogues") %}
+            <div class="card" style="margin-top:10px;">
+                <div class="phase-title">{{ d.get("title","Dialog") }}</div>
+                {% if d.get("lines") %}
+                <ul class="list">
+                    {% for line in d.get("lines") %}
+                    <li><b>{{ line.get("role","") }}:</b> {{ line.get("text","") }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            {% if not (ls.get("vocabulary") or ls.get("phrases") or ls.get("grammar_focus") or ls.get("mini_dialogues"))
+            %}
+            <p class="muted">Keine Sprachmittel gespeichert.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="h1">Belegstellen (Citations)</div>
+        {% if unit.citations %}
+        <ol class="list">
+            {% for c in unit.citations %}
+            <li style="margin-bottom:10px;">
+                <div>
+                    <b>{{ c.source or "?" }}</b>
+                    {% if c.page %} – S. {{ c.page }}{% endif %}
+                    {% if c.chunk_index is not none %} (Chunk {{ c.chunk_index }}){% endif %}
+                    <span class="muted">Score {{ "%.3f"|format(c.score) }}</span>
+                </div>
+                {% if c.quote %}
+                <div class="mono">„{{ c.quote }}“</div>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="muted">Keine Citations gespeichert.</p>
+        {% endif %}
+    </div>
+
+</body>
+
+</html>
