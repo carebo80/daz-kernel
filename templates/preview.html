@@ -44,6 +44,15 @@
             {% endfor %}
 
           </select>
+
+          <label>Phasenmodell</label>
+          <select name="phase_model">
+            <option value="rita" {% if form.phase_model=="rita" %}selected{% endif %}>RITA</option>
+            <option value="aviva" {% if form.phase_model=="aviva" %}selected{% endif %}>AVIVA</option>
+            <option value="sos" {% if form.phase_model=="sos" %}selected{% endif %}>SOS Grammatik</option>
+            <option value="5ph" {% if form.phase_model=="5ph" %}selected{% endif %}>5-Phasen</option>
+          </select>
+          
         </div>
         <div>
           <label>Niveau</label>
