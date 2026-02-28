@@ -6,6 +6,8 @@ from app.api.topics import router as topics_router
 from app.api.units import router as units_router
 from app.api.health import router as health_router
 from app.api.preview import router as preview_router
+from app.api.phase_models import router as phase_models_router
+from app.api import admin_vocab
 
 app = FastAPI(title="DaZ Kernel")
 
@@ -15,3 +17,5 @@ app.include_router(search_router)
 app.include_router(topics_router)
 app.include_router(units_router)
 app.include_router(preview_router)
+app.include_router(phase_models_router)
+app.include_router(admin_vocab.router, prefix="/admin")

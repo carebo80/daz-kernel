@@ -1,6 +1,7 @@
 # app/core/settings.py
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
@@ -11,3 +12,10 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b-instruct-q5_K_M")
 
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL fehlt (.env)")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+
+logger = logging.getLogger("daz_kernel")

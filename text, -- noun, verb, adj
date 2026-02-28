@@ -1,0 +1,23 @@
+                              Table "public.p_tags"
+   Column   |           Type           | Collation | Nullable |      Default      
+------------+--------------------------+-----------+----------+-------------------
+ id         | uuid                     |           | not null | gen_random_uuid()
+ type       | text                     |           | not null | 
+ code       | text                     |           | not null | 
+ title      | text                     |           | not null | 
+ parent_id  | uuid                     |           |          | 
+ is_active  | boolean                  |           | not null | true
+ meta       | jsonb                    |           | not null | '{}'::jsonb
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "p_tags_pkey" PRIMARY KEY, btree (id)
+    "ix_p_tags_parent" btree (parent_id)
+    "ix_p_tags_type" btree (type)
+    "p_tags_type_code_key" UNIQUE CONSTRAINT, btree (type, code)
+Foreign-key constraints:
+    "p_tags_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES p_tags(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "p_tags" CONSTRAINT "p_tags_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES p_tags(id) ON DELETE SET NULL
+    TABLE "p_unit_tags" CONSTRAINT "p_unit_tags_tag_id_fkey" FOREIGN KEY (tag_id) REFERENCES p_tags(id) ON DELETE CASCADE
+

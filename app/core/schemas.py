@@ -23,13 +23,12 @@ class AskResponse(BaseModel):
 class PlanUnitRequest(BaseModel):
     topic: str
     level: str
-    strong_group: bool = True
-    time_start: str = "08:45"
-    time_end: str = "11:15"
+    duration_minutes: int = 150
     top_k: int = TOP_K_DEFAULT
     text_terms: Optional[List[str]] = None
     ollama_model: str = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
-    phase_model: str = "rita"
+    phase_model_code: str = "five_phases"
+    phases_json: Optional[str] = None
 
 class PlanUnitResponse(BaseModel):
     unit_title: str
@@ -54,12 +53,12 @@ class UnitCreateRequest(BaseModel):
     topic_slug: Optional[str] = None  # "bank" (optional; wenn None -> aus topic abgeleitet)
     time_start: str = ""
     time_end: str = ""
-    strong_group: bool = False
     title: str = ""
     notes: str = ""
     plan: Dict[str, Any] = Field(default_factory=dict)             # Feinplanung JSON
     language_support: Dict[str, Any] = Field(default_factory=dict)
     citations: List["UnitCitationIn"] = Field(default_factory=list)
+    phase_model_code: str = "five_phases"
 
 class UnitCitationOut(BaseModel):
     id: str
@@ -78,7 +77,6 @@ class UnitResponse(BaseModel):
     topic: Optional[str] = None
     time_start: str
     time_end: str
-    strong_group: bool
     title: str
     notes: str
     plan: Dict[str, Any] = Field(default_factory=dict)
