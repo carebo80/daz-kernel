@@ -30,49 +30,65 @@ def parse_csv_codes(s: str) -> List[str]:
     return uniq
 
 
-def fetch_tag_options() -> Dict[str, List[tuple[str, str]]]:
-    """Lädt Optionen für Dropdown/Picker."""
+def fetch_tag_options(topic_code: str | None = None) -> Dict[str, List[tuple[str, str]]]:
     with db() as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT code, title FROM p_tags WHERE type='subtopic' ORDER BY title")
+            cur.execute("SELECT code, title FROM p_tags WHERE type='topic' ORDER BY title")
+            topics = cur.fetchall()
+
+            cur.execute("SELECT code, title FROM p_tags WHERE type='level' ORDER BY code")
+            levels = cur.fetchall()
+
+            # subtopics optional: falls topic_code gesetzt, nur passende
+            if topic_code:
+                cur.execute("""
+                    SELECT st.code, st.title
+                    FROM p_tags st
+                    JOIN p_tags t ON st.parent_id = t.id
+                    WHERE st.type='subtopic' AND t.type='topic' AND t.code=%s
+                    ORDER BY st.title
+                """, (topic_code,))
+            else:
+                cur.execute("SELECT code, title FROM p_tags WHERE type='subtopic' ORDER BY title")
             subtopics = cur.fetchall()
+
             cur.execute("SELECT code, title FROM p_tags WHERE type='grammar' ORDER BY title")
             grammars = cur.fetchall()
+
             cur.execute("SELECT code, title FROM p_tags WHERE type='rag_term' ORDER BY title")
             rag_terms = cur.fetchall()
-    return {"subtopics": subtopics, "grammars": grammars, "rag_terms": rag_terms}
 
+    return {"topics": topics, "levels": levels, "subtopics": subtopics, "grammars": grammars, "rag_terms": rag_terms}
 
 @router.get("/vocab/new", response_class=HTMLResponse)
-def vocab_new(request: Request):
-    opts = fetch_tag_options()
+def vocab_new(request: Request, topic: str | None = None):
+    opts = fetch_tag_options(topic_code=topic)
     form = {
+        "topic": topic or "",
+        "level": "",
         "lemma": "",
         "pos": "",
         "article": "",
         "plural": "",
-        "level": "",
         "definition": "",
         "example": "",
         "tags_subtopic": "",
         "tags_grammar": "",
         "tags_rag_term": "",
     }
-    return templates.TemplateResponse(
-        "admin_vocab_new.html",
-        {"request": request, "form": form, **opts},
-    )
+    return templates.TemplateResponse("admin_vocab_new.html", {"request": request, "form": form, **opts})
 
 
 @router.post("/vocab/save")
 def vocab_save(
     request: Request,
     vocab_id: Optional[str] = Form(None),
+    topic: str = Form(""),  
+    level: str = Form(""), 
     lemma: str = Form(...),
     pos: str = Form(""),
     article: str = Form(""),
     plural: str = Form(""),
-    level: str = Form(""),
     definition: str = Form(""),
     example: str = Form(""),
     tags_subtopic: str = Form(""),
@@ -139,7 +155,8 @@ def vocab_save(
                     """,
                     (vid, tag_type, codes),
                 )
-
+            replace_tags("topic", topic)
+            replace_tags("level", level)
             replace_tags("subtopic", tags_subtopic)
             replace_tags("grammar", tags_grammar)
             replace_tags("rag_term", tags_rag_term)
@@ -147,4 +164,4 @@ def vocab_save(
         conn.commit()
 
     # Redirect zurück zum Formular (oder später Edit-Seite)
-    return RedirectResponse(url="/admin/vocab/new", status_code=303)
+    return RedirectResponse(url=f"/admin/vocab/edit/{vid}", status_code=303)

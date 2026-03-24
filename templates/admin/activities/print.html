@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Druckansicht – {{ session.title }}</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+
+<body class="bg-white text-slate-900 print:bg-white">
+    <main class="mx-auto max-w-5xl px-5 py-5 print:max-w-none print:px-0 print:py-0">
+        <div class="no-print mb-4">
+            <button
+                class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800"
+                onclick="window.print()">
+                Drucken
+            </button>
+        </div>
+
+        <h1 class="mb-5 text-3xl font-bold tracking-tight print:text-2xl">
+            {{ session.title }} – Druckansicht
+        </h1>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 print:gap-2">
+            {% for p in participants %}
+            {% if p.visitenkarte %}
+            {% set vn = p.visitenkarte.get("vorname", "") %}
+            {% set nn = p.visitenkarte.get("nachname", "") %}
+            {% set initials = (vn[:1] ~ nn[:1]).upper() %}
+
+            <section
+                class="break-inside-avoid rounded-md border-2 border-slate-800 bg-white p-4 shadow-sm print:shadow-none">
+                <div class="mb-4 flex items-center gap-3">
+                    <div
+                        class="flex h-14 w-14 items-center justify-center rounded-full border-2 border-slate-900 text-base font-extrabold tracking-wide">
+                        {{ initials }}
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-[15px] leading-6">
+                    {% if vn or nn %}
+                    <div class="font-bold text-slate-900">{{ vn }} {{ nn }}</div>
+                    {% endif %}
+
+                    {% if p.visitenkarte.get("adresse") %}
+                    <div>{{ p.visitenkarte.get("adresse") }}</div>
+                    {% endif %}
+
+                    {% if p.visitenkarte.get("plz") or p.visitenkarte.get("ort") %}
+                    <div>{{ p.visitenkarte.get("plz", "") }} {{ p.visitenkarte.get("ort", "") }}</div>
+                    {% endif %}
+
+                    {% if p.visitenkarte.get("telefon") %}
+                    <div><span class="font-semibold">Telefon:</span> {{ p.visitenkarte.get("telefon") }}</div>
+                    {% endif %}
+
+                    {% if p.visitenkarte.get("email") %}
+                    <div><span class="font-semibold">E-Mail:</span> {{ p.visitenkarte.get("email") }}</div>
+                    {% endif %}
+                </div>
+            </section>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </main>
+</body>
+
+</html>

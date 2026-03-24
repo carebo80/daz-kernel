@@ -57,6 +57,11 @@
             color: #777;
             margin-top: 6px;
         }
+        .row { display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .row > * { min-width: 0; } /* wichtig */
+        *, *::before, *::after { box-sizing: border-box; }
+        input, select, textarea { width: 100%; max-width: 100%; }
+        textarea { resize: vertical; } /* optional */
     </style>
 </head>
 
@@ -69,29 +74,48 @@
 
             <div class="row">
                 <div>
-                    <label>Lemma *</label>
-                    <input name="lemma" value="{{ form.lemma }}" required />
+                    <label>Topic *</label>
+                    <select name="topic" required onchange="location.href='/admin/vocab/new?topic='+this.value">
+                        <option value="">– wählen –</option>
+                        {% for code, title in topics %}
+                        <option value="{{ code }}" {% if form.topic==code %}selected{% endif %}>{{ title }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="hint">Topic zuerst wählen (filtert Subtopics).</div>
                 </div>
+
+                <div>
+                    <label>Niveau</label>
+                    <select name="level">
+                        <option value="">–</option>
+                        {% for code, title in levels %}
+                        <option value="{{ code }}" {% if form.level==code or form.level==title %}selected{% endif %}>{{ title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div>
                     <label>Wortart (pos)</label>
                     <input name="pos" value="{{ form.pos }}" placeholder="noun / verb / adj ..." />
-                </div>
-                <div>
-                    <label>Niveau</label>
-                    <input name="level" value="{{ form.level }}" placeholder="A1..C2" />
                 </div>
             </div>
 
             <div class="row">
                 <div>
+                    <label>Lemma *</label>
+                    <input name="lemma" value="{{ form.lemma }}" required />
+                </div>
+
+                <div>
                     <label>Artikel</label>
                     <input name="article" value="{{ form.article }}" placeholder="der/die/das" />
                 </div>
+
                 <div>
                     <label>Plural</label>
                     <input name="plural" value="{{ form.plural }}" />
                 </div>
-                <div></div>
             </div>
 
             <label>Definition</label>

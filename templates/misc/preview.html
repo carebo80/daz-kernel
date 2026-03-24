@@ -1,0 +1,591 @@
+-- Active: 1770478333823@@127.0.0.1@5432@daz_kernel
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>DaZ Kernel – Preview</title>
+    <style>
+        :root {
+            --b: #d0d7de;
+            --bg: #fff;
+            --fg: #111;
+            --mut: #666;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+            margin: 18px;
+            color: var(--fg);
+        }
+
+        .card {
+            border: 1px solid var(--b);
+            border-radius: 12px;
+            padding: 14px;
+            background: var(--bg);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: var(--mut);
+            margin-bottom: 6px;
+        }
+
+        .control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--b);
+            border-radius: 10px;
+            background: #fff;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        select,
+        input[type="number"],
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 14px;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+        }
+
+        .check {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .hint {
+            margin: 6px 0 0;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .btn {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--b);
+            background: #f6f8fa;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            filter: brightness(0.98);
+        }
+
+        .muted {
+            color: var(--mut);
+            font-size: 13px;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            margin: 24px;
+            line-height: 1.35;
+        }
+
+        h1,
+        h2,
+        h3 {
+            margin: 0.6em 0 0.3em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            color: #444;
+            margin-bottom: 4px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border-bottom: 1px solid #eee;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        code {
+            background: #f6f6f6;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+
+        details {
+            margin-top: 10px;
+        }
+
+        .role {
+            font-weight: 600;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            font-size: 12px;
+            margin-right: 6px;
+        }
+    </style>
+</head>
+<script>
+
+    function normList(s) { return s.split(',').map(x => x.trim()).filter(Boolean); }
+    function setList(arr) { document.getElementById('text_terms').value = arr.join(','); }
+    function toggleTerm(t) {
+        const el = document.getElementById('text_terms');
+        const arr = normList(el.value);
+        const i = arr.findIndex(x => x.toLowerCase() === t.toLowerCase());
+        if (i >= 0) arr.splice(i, 1); else arr.push(t);
+        setList(arr);
+    }
+
+</script>
+
+<body>
+    <h1>DaZ Kernel – Plan Builder</h1>
+
+    <div class="card">
+        <form method="post" action="/preview">
+
+            <!-- Grunddaten -->
+            <h2>Grunddaten</h2>
+
+            <div class="row">
+                <div>
+                    <label>Phasenmodell</label>
+                    <select name="phase_model_code" id="phase_model_code">
+                        {% for code, title in phase_models %}
+                        <option value="{{ code }}" {% if form.phase_model_code==code %}selected{% endif %}>
+                            {{ title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label>Niveau</label>
+                    <select name="level" id="level">
+                        {% for code, title in levels %}
+                        <option value="{{ title }}" {% if form.level==title %}selected{% endif %}>
+                            {{ title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="hint">Tipp: Für DB-Codes könntest du später value="{{ code }}" nutzen.</p>
+                </div>
+
+            </div>
+
+            <div class="row" style="margin-top:12px;">
+                <div>
+                    <label>Thema</label>
+                    <select name="topic" id="topic">
+                        {% for code, title in topics %}
+                        <option value="{{ code }}" {% if code==form.topic %}selected{% endif %}>
+                            {{ title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="hint">Subtopics werden serverseitig je nach Thema geladen.</p>
+                </div>
+                <div>
+                    <label>Dauer (Minuten)</label>
+                    <input type="number" name="duration_minutes" id="duration_minutes" min="15" step="5"
+                        value="{{ form.duration_minutes or 150 }}" />
+                    <p class="hint">Empfehlung: 150 (2.5h) / 210 (3.5h)</p>
+                </div>
+            </div>
+            <h2 style="margin-top:18px;">Phasen-Planer</h2>
+
+            <input type="hidden" name="phases_json" id="phases_json" value="" />
+
+            <table style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th>Phase</th>
+                        <th>Subthema</th>
+                        <th>Grammatik</th>
+                        <th>RAG</th>
+                        <th>Min</th>
+                    </tr>
+                </thead>
+                <tbody id="phase_rows_builder">
+                    {% for p in phase_rows %}
+                    <tr class="phase-row" data-phase-title="{{ p.title }}" data-weight="{{ p.weight or 1 }}">
+                        <td>{{ p.title }}</td>
+
+                        <td>
+                            <select class="phase-subtopic">
+                                <option value="" {% if not p.subtopic_code %}selected{% endif %}>–</option>
+                                {% for code, title in subtopics %}
+                                <option value="{{ code }}" {% if code==p.subtopic_code %}selected{% endif %}>{{ title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <td>
+                            <select class="phase-grammar">
+                                <option value="" {% if not p.grammar_code %}selected{% endif %}>–</option>
+                                {% for code, title in grammars %}
+                                <option value="{{ code }}" {% if code==p.grammar_code %}selected{% endif %}>{{ title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <td>
+                            <select class="phase-rag" multiple size="3">
+                                {% for code, title in rag_terms %}
+                                <option value="{{ code }}" {% if p.rag_codes and (code in p.rag_codes) %}selected{%
+                                    endif %}>
+                                    {{ title }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+
+                        <td style="width:110px;">
+                            <input type="number" class="phase-minutes" min="0" step="5" value="{{ p.minutes }}" />
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+            </table>
+
+            <div style="margin-top:8px;">
+                <small class="muted">Summe: <span id="phase_total">0</span> Minuten</small>
+            </div>
+
+            <!-- Inhalte steuern -->
+            <h2 style="margin-top:18px;">Inhalte steuern</h2>
+
+            <div class="row">
+                <div>
+                    <div style="margin-top:8px;">
+                        <label>RAG Tiefe (top_k)</label>
+                        <input type="number" name="top_k" min="1" max="20" step="1" value="{{ form.top_k or 6 }}" />
+                        <p class="hint">6 ist oft ein guter Start. Höher = mehr Belege, langsamer.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generieren -->
+            <div style="margin-top:16px;">
+                <button type="submit">Preview erzeugen</button>
+            </div>
+        </form>
+    </div>
+
+    {% if unit %}
+    <h2 style="margin-top:18px;">{{ unit.unit_title }}</h2>
+
+    <p>
+        <span class="pill">{{ unit.meta.level }}</span>
+        <span class="pill">{{ unit.meta.topic }}</span>
+        <span class="pill">{{ unit.meta.duration_minutes }} min</span>
+        <span class="pill">Phasen: {{ unit.meta.phase_model_code }}</span>
+    </p>
+
+    <div class="card" style="margin-top:14px;">
+        <h3>Phasenplan</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Phase</th>
+                    <th>Min</th>
+                    <th>Subthema</th>
+                    <th>Grammatik</th>
+                    <th>RAG</th>
+                    <th>Ziel</th>
+                    <th>Aktivität</th>
+                </tr>
+            </thead>
+            <tbody id="phase_rows_result">
+                {% for p in unit.phases %}
+                <tr>
+                    <td>{{ p.phase }}</td>
+                    <td>{{ p.minutes }}</td>
+                    <td>{{ p.subtopic or "-" }}</td>
+                    <td>{{ p.grammar or "-" }}</td>
+                    <td>
+                        {% if p.rag_terms %}
+                        {{ p.rag_terms|join(", ") }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td>{{ p.aim }}</td>
+                    <td>{{ p.activity }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="grid" style="margin-top:14px;">
+        <div class="card">
+            <h3>Sprachmittel</h3>
+
+            <h4>Wortschatz</h4>
+            <ul>
+                {% for v in unit.language_support.vocabulary %}
+                <li><b>{{ v.word }}</b> – {{ v.note }}</li>
+                {% endfor %}
+            </ul>
+
+            <h4>Redemittel</h4>
+            <ul>
+                {% for p in unit.language_support.phrases %}
+                <li>{{ p.de }} <span class="muted">({{ p.function }})</span></li>
+                {% endfor %}
+            </ul>
+
+            <h4>Grammatik-Fokus</h4>
+            <ul>
+                {% for g in unit.language_support.grammar_focus %}
+                <li><b>{{ g.topic }}</b>
+                    <ul>
+                        {% for ex in g.examples %}
+                        <li>{{ ex }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="card">
+            <h3>Mini-Dialoge</h3>
+            {% if unit.language_support.mini_dialogues and unit.language_support.mini_dialogues|length > 0 %}
+            {% for d in unit.language_support.mini_dialogues %}
+            <h4>{{ d.title }}</h4>
+            <ul>
+                {% for line in d.lines %}
+                <li><span class="role">{{ line.role }}:</span> {{ line.text }}</li>
+                {% endfor %}
+            </ul>
+            {% endfor %}
+            {% else %}
+            <p class="muted">Keine Dialoge vorhanden.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+        <details>
+            <summary><b>GeR/RAG (optional)</b></summary>
+            <pre style="white-space: pre-wrap;">{{ unit.ger.answer }}</pre>
+        </details>
+    </div>
+    {% endif %}
+    <script>
+        (function () {
+            const form = document.querySelector('form[action="/preview"]');
+            const tbody = document.getElementById('phase_rows_builder');
+            const totalEl = document.getElementById('phase_total');
+            const hidden = document.getElementById('phases_json');
+            const durationInput = document.getElementById('duration_minutes');
+
+            if (!form || !tbody || !hidden || !durationInput) return;
+
+            function roundTo5(n) {
+                return Math.round(n / 5) * 5;
+            }
+
+            function getRows() {
+                return Array.from(tbody.querySelectorAll('tr.phase-row'));
+            }
+
+            function compute() {
+                const rows = getRows();
+                let total = 0;
+
+                const phases = rows.map((tr, idx) => {
+                    const title = tr.dataset.phaseTitle || `Phase ${idx + 1}`;
+                    const minInput = tr.querySelector('input.phase-minutes');
+                    const subSel = tr.querySelector('select.phase-subtopic');
+                    const gramSel = tr.querySelector('select.phase-grammar');
+                    const ragSel = tr.querySelector('select.phase-rag');
+
+                    const subtopic = subSel ? subSel.value : "";
+                    const grammar = gramSel ? gramSel.value : "";
+                    const rag_terms = ragSel ? Array.from(ragSel.selectedOptions).map(o => o.value) : [];
+                    let minutes = parseInt((minInput && minInput.value) || "0", 10) || 0;
+                    minutes = roundTo5(minutes);              // ✅ immer runden
+
+                    // input auch korrigieren, damit Browser nicht beim Submit motzt
+                    if (minInput) minInput.value = String(minutes);
+
+                    total += minutes;
+                    return { title, minutes, subtopic, grammar, rag_terms };
+                });
+
+                if (totalEl) totalEl.textContent = String(total);
+                hidden.value = JSON.stringify(phases);
+            }
+
+            function redistribute() {
+                const targetRaw = parseInt(durationInput.value || "0", 10) || 0;
+                const target = roundTo5(targetRaw);         // ✅ Dauer auch runden
+                durationInput.value = String(target);
+
+                const rows = getRows();
+                if (target <= 0 || rows.length === 0) return;
+
+                const weights = rows.map(tr => {
+                    const w = parseFloat(tr.dataset.weight || "1");
+                    return Number.isFinite(w) && w > 0 ? w : 1;
+                });
+
+                const sumW = weights.reduce((a, b) => a + b, 0);
+                if (sumW <= 0) return;
+
+                const raw = weights.map(w => (target * w) / sumW);
+                const mins = raw.map(x => Math.floor(x / 5) * 5);
+                let assigned = mins.reduce((a, b) => a + b, 0);
+
+                let remaining = target - assigned;
+
+                const order = raw
+                    .map((x, i) => ({ i, frac: x - Math.floor(x) }))
+                    .sort((a, b) => b.frac - a.frac)
+                    .map(o => o.i);
+
+                let k = 0;
+                while (remaining >= 5 && k < 10000) {
+                    const i = order[k % order.length];
+                    mins[i] += 5;
+                    remaining -= 5;
+                    k++;
+                }
+
+                rows.forEach((tr, idx) => {
+                    const minInput = tr.querySelector('input.phase-minutes');
+                    if (minInput) minInput.value = String(mins[idx] || 0);
+                });
+
+                compute();
+            }
+
+            // Dauer geändert -> neu verteilen
+            durationInput.addEventListener('change', redistribute);
+
+            // Phase-Minuten geändert -> runden + compute
+            form.addEventListener('input', (e) => {
+                if (e.target && e.target.classList && e.target.classList.contains('phase-minutes')) {
+                    const v = parseInt(e.target.value || "0", 10) || 0;
+                    e.target.value = String(roundTo5(v));
+                    compute();
+                }
+            });
+            form.addEventListener('change', (e) => {
+                if (e.target && (
+                    e.target.classList.contains('phase-subtopic') ||
+                    e.target.classList.contains('phase-grammar') ||
+                    e.target.classList.contains('phase-rag') ||
+                    e.target.classList.contains('phase-minutes')
+                )) compute();
+            });
+            // Vor Submit: sicherstellen, dass alles rund ist
+            form.addEventListener('submit', () => compute());
+
+            // initial
+            compute();
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const phaseSel = document.getElementById('phase_model_code');
+            const topicSel = document.getElementById('topic');
+            const levelSel = document.getElementById('level');
+            const durInp = document.getElementById('duration_minutes');
+            const topkInp = document.querySelector('input[name="top_k"]');
+
+            function reloadPreview() {
+                const params = new URLSearchParams();
+                if (topicSel) params.set('topic', topicSel.value);
+                if (levelSel) params.set('level', levelSel.value);
+                if (phaseSel) params.set('phase_model_code', phaseSel.value);
+
+                // Dauer mitgeben (als 5er)
+                const d = parseInt((durInp && durInp.value) || "150", 10) || 150;
+                params.set('duration_minutes', String(Math.round(d / 5) * 5));
+
+                if (topkInp) params.set('top_k', topkInp.value || '5');
+                window.location.href = '/preview?' + params.toString();
+            }
+
+            if (phaseSel) phaseSel.addEventListener('change', reloadPreview);
+            if (topicSel) topicSel.addEventListener('change', reloadPreview);
+            if (levelSel) levelSel.addEventListener('change', reloadPreview);
+        })();
+    </script>
+</body>
+
+</html>

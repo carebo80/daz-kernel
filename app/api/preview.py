@@ -268,26 +268,25 @@ def preview_post(
     logger.info(f"[{rid}] POST /preview topic={topic} level={level} phase_model={phase_model_code} dur={duration_minutes}")
     logger.info(f"[{rid}] phases_json={phases_json[:200]}...")
 
+    # 1) UI-Phasen genau einmal parsen
     ui_phases = parse_phases_json(phases_json)
     logger.info(f"[{rid}] ui_phases_len={len(ui_phases)} ui_phases_keys={(list(ui_phases[0].keys()) if ui_phases else [])}")
 
+    # 2) UI-Listen laden
     topics, phase_models, levels, grammars, methods, rag_terms, subtopics = fetch_preview_lists(topic)
 
-    # dur
+    # 3) Dauer normalisieren
     try:
         dur = int(duration_minutes) if duration_minutes else 150
     except Exception:
         dur = 150
     dur = max(15, (dur // 5) * 5)
 
-    # Raster
+    # 4) Builder-Raster erzeugen und UI-Werte mergen
     phase_rows = compute_phase_rows(phase_model_code.strip().lower(), dur)
-
-    # UI phases -> merge
-    ui_phases = parse_phases_json(phases_json)
     merge_ui_into_phase_rows(phase_rows, ui_phases)
 
-    # Topic Titel für LLM
+    # 5) Topic-Titel für LLM holen
     with db() as conn:
         with conn.cursor() as cur:
             cur.execute(
@@ -297,8 +296,10 @@ def preview_post(
             row = cur.fetchone()
     topic_title = row[0] if row else topic
 
+    # 6) text_terms normalisieren
     terms = [t.strip() for t in (text_terms or "").split(",") if t.strip()]
 
+    # 7) Request fürs Planning
     req = PlanUnitRequest(
         topic=topic_title,
         level=level,
@@ -307,30 +308,17 @@ def preview_post(
         text_terms=terms,
         ollama_model=OLLAMA_MODEL,
         phase_model_code=phase_model_code.strip().lower(),
-        phases_json=phases_json,  # bleibt im req (für planning.py)
+        phases_json=phases_json,
     )
 
+    # 8) Unit generieren
     unit = create_plan_unit(req, rid=rid)
-    ui_phases = parse_phases_json(phases_json)
     logger.info(f"[{rid}] unit_phases_len={len(unit.phases) if isinstance(unit.phases, list) else -1}")
 
-    if ui_phases and isinstance(unit.phases, list) and len(ui_phases) == len(unit.phases):
-        for i in range(len(unit.phases)):
-            u = ui_phases[i]
-            unit.phases[i]["subtopic"] = u.get("subtopic") or ""
-            unit.phases[i]["grammar"] = u.get("grammar") or ""
-            unit.phases[i]["rag_terms"] = u.get("rag_terms") if isinstance(u.get("rag_terms"), list) else []
-            try:
-                unit.phases[i]["minutes"] = int(u.get("minutes") or unit.phases[i].get("minutes") or 0)
-            except Exception:
-                pass
-    else:
-        logger.warning(f"[{rid}] merge skipped: ui_len={len(ui_phases)} unit_len={len(unit.phases) if isinstance(unit.phases, list) else None}")
-
-
-    # Titel-Mapping für Codes (optional, für schöne Anzeige)
+    # 9) Titel-Mapping für Anzeige
     sub_codes = [p.get("subtopic") for p in ui_phases if isinstance(p.get("subtopic"), str)]
-    gr_codes  = [p.get("grammar") for p in ui_phases if isinstance(p.get("grammar"), str)]
+    gr_codes = [p.get("grammar") for p in ui_phases if isinstance(p.get("grammar"), str)]
+
     rag_codes = []
     for p in ui_phases:
         xs = p.get("rag_terms") or []
@@ -338,10 +326,10 @@ def preview_post(
             rag_codes += [x for x in xs if isinstance(x, str)]
 
     sub_map = load_tag_titles("subtopic", sub_codes)
-    gr_map  = load_tag_titles("grammar", gr_codes)
+    gr_map = load_tag_titles("grammar", gr_codes)
     rag_map = load_tag_titles("rag_term", rag_codes)
 
-    # 1) unit.phases anreichern (Match über Reihenfolge)
+    # 10) unit.phases mit hübschen Titles anreichern
     if ui_phases and isinstance(unit.phases, list) and len(ui_phases) == len(unit.phases):
         enriched = []
         for i, ph in enumerate(unit.phases):
@@ -350,12 +338,10 @@ def preview_post(
             gc = u.get("grammar") or ""
             rc = u.get("rag_terms") if isinstance(u.get("rag_terms"), list) else []
 
-            # NOTE: hier kannst du entweder codes oder titles speichern
             ph["subtopic"] = sub_map.get(sc) or sc or ""
-            ph["grammar"]  = gr_map.get(gc)  or gc or ""
+            ph["grammar"] = gr_map.get(gc) or gc or ""
             ph["rag_terms"] = [rag_map.get(x, x) for x in rc]
 
-            # falls du Minuten aus UI übernehmen willst:
             try:
                 ph["minutes"] = int(u.get("minutes") or ph.get("minutes") or 0)
             except Exception:
@@ -364,6 +350,13 @@ def preview_post(
             enriched.append(ph)
 
         unit.phases = enriched
+    else:
+        logger.warning(
+            f"[{rid}] enrich skipped: ui_len={len(ui_phases)} "
+            f"unit_len={len(unit.phases) if isinstance(unit.phases, list) else None}"
+        )
+
+    # 11) Form-State zurückgeben
     form = {
         "phase_model_code": phase_model_code.strip().lower(),
         "topic": topic,
@@ -380,18 +373,6 @@ def preview_post(
         "rag_auto": True,
     }
 
-    ui_phases = parse_phases_json(phases_json)
-    if ui_phases and len(ui_phases) == len(phase_rows):
-        for i in range(len(phase_rows)):
-            u = ui_phases[i]
-            phase_rows[i]["subtopic_code"] = u.get("subtopic") or ""
-            phase_rows[i]["grammar_code"]  = u.get("grammar") or ""
-            phase_rows[i]["rag_codes"]     = u.get("rag_terms") if isinstance(u.get("rag_terms"), list) else []
-            try:
-                phase_rows[i]["minutes"] = int(u.get("minutes") or phase_rows[i]["minutes"] or 0)
-            except Exception:
-                pass
-
     return templates.TemplateResponse(
         "preview.html",
         {
@@ -400,7 +381,7 @@ def preview_post(
             "unit": unit,
             "topics": topics,
             "phase_models": phase_models,
-            "phase_rows": phase_rows,  # enthält selected + titles
+            "phase_rows": phase_rows,
             "levels": levels,
             "grammars": grammars,
             "methods": methods,
