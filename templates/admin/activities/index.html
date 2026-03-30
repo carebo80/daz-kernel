@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Activities</title>
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
     <link rel="stylesheet" href="/static/css/app.css">
 </head>
 
@@ -116,12 +117,19 @@
                     </div>
 
                     <div class="shrink-0">
+                        {% if t.type == "bingo" %}
+                        <a href="/admin/activities/{{ t.id }}/configure"
+                            class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
+                            Konfigurieren & starten
+                        </a>
+                        {% else %}
                         <form method="post" action="/admin/activities/{{ t.id }}/start">
                             <button type="submit"
                                 class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
                                 Session starten
                             </button>
                         </form>
+                        {% endif %}
                     </div>
                 </div>
             </section>

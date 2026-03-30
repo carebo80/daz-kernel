@@ -2,5 +2,11 @@
   "dependencies": {
     "@tailwindcss/cli": "^4.2.2",
     "tailwindcss": "^4.2.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "scripts": {
+    "dev": "concurrently -n TAILWIND,SERVER -c blue,green \"npx @tailwindcss/cli -i ./assets/css/app.css -o ./static/css/app.css --watch\" \"bash -c 'source .venv/bin/activate && uvicorn app.server:app --reload --host 0.0.0.0 --port 8000'\""
   }
 }

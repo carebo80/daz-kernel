@@ -1,5 +1,10 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-cd "$(dirname "$0")" || exit 1
+cd ~/dev/daz_kernel
 source .venv/bin/activate
-exec uvicorn app.server:app --reload --host 0.0.0.0 --port 8000
+
+# Tailwind im Hintergrund
+npx @tailwindcss/cli -i ./assets/css/app.css -o ./static/css/app.css --watch &
+
+# Server starten
+uvicorn app.server:app --reload --host 0.0.0.0 --port 8000

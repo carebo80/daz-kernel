@@ -1,0 +1,36 @@
+<aside id="participants-panel" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+    hx-get="/admin/activities/session/{{ session.id }}/play/participants" hx-trigger="load, every 5s"
+    hx-swap="outerHTML">
+    <h2 class="text-xl font-semibold text-slate-900">Teilnehmende</h2>
+    <p class="mt-1 text-sm text-slate-600">
+        Fortschritt und Bingo-Status.
+    </p>
+
+    <div class="mt-5 space-y-3">
+        {% if participants %}
+        {% for p in participants %}
+        <div class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+            <div class="flex items-center justify-between gap-3">
+                <div class="font-medium text-slate-900">{{ p.display_name }}</div>
+
+                {% if p.has_bingo %}
+                <span
+                    class="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    Bingo
+                </span>
+                {% else %}
+                <span
+                    class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700">
+                    {{ p.marked_count }} markiert
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+            Noch keine Teilnehmenden in dieser Session.
+        </div>
+        {% endif %}
+    </div>
+</aside>

@@ -1,0 +1,40 @@
+<form id="teacher-board" method="post" action="/admin/activities/session/{{ session.id }}/play"
+    hx-post="/admin/activities/session/{{ session.id }}/play"
+    hx-trigger="change from:input[name='teacher_called_items']" hx-target="#teacher-board" hx-swap="outerHTML"
+    hx-select="#teacher-board" class="mt-6">
+    {% if grid_size == 4 %}
+    <div class="grid gap-3" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+        {% elif grid_size == 5 %}
+        <div class="grid gap-3" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+            {% else %}
+            <div class="grid gap-3" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+                {% endif %}
+
+                {% for item in items %}
+                {% set idx = loop.index0 %}
+                {% set checked = idx in teacher_called_items %}
+
+                <label class="block cursor-pointer">
+                    <input type="checkbox" name="teacher_called_items" value="{{ idx }}" class="peer sr-only" {% if
+                        checked %}checked{% endif %} />
+                    <div class="flex aspect-square items-center justify-center rounded-lg border p-3 text-center text-base font-semibold shadow-sm transition hover:bg-slate-50
+                        {% if checked %}
+                            border-emerald-500 bg-emerald-100 text-emerald-900
+                        {% else %}
+                            border-slate-300 bg-white text-slate-800
+                        {% endif %}">
+                        {{ item }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+
+            <noscript>
+                <div class="mt-6">
+                    <button type="submit"
+                        class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
+                        Spielstand speichern
+                    </button>
+                </div>
+            </noscript>
+</form>

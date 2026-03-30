@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bingo konfigurieren</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+
+<body class="min-h-screen bg-slate-50 text-slate-900">
+    <main class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        {% set img = template.config.get("image", "default.jpg") %}
+        {% set description = template.config.get("description", "") %}
+
+        <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="flex flex-col gap-6 md:flex-row md:items-start">
+                <img src="/static/activity_images/{{ img }}" alt="{{ template.title }}"
+                    class="h-48 w-full max-w-sm rounded-lg border border-slate-200 object-cover shadow-sm" />
+
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-3xl font-bold tracking-tight">{{ template.title }}</h1>
+                    {% if description %}
+                    <p class="mt-3 text-sm leading-6 text-slate-600">{{ description }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 class="text-xl font-semibold text-slate-900">Bingo konfigurieren</h2>
+            <p class="mt-2 text-sm text-slate-600">
+                Wähle Modus und Raster, bevor die Session gestartet wird.
+            </p>
+
+            {% if error %}
+            <div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <form method="post" action="/admin/activities/{{ template.id }}/start-configured" class="mt-6 space-y-6">
+                <input type="hidden" name="activity_type" value="{{ template.type }}" />
+            
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                            <div>
+                                <label for="mode" class="block text-sm font-medium text-slate-700">Modus</label>
+                                <select id="mode" name="mode"
+                                    class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200">
+                                    {% for opt in mode_options %}
+                                    <option value="{{ opt.value }}" {% if selected_mode==opt.value %}selected{% endif %}>
+                                        {{ opt.label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+            
+                            <div>
+                                <label for="grid_size" class="block text-sm font-medium text-slate-700">Raster</label>
+                                <select id="grid_size" name="grid_size"
+                                    class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200">
+                                    <option value="4" {% if selected_grid_size==4 %}selected{% endif %}>4x4</option>
+                                    <option value="5" {% if selected_grid_size==5 %}selected{% endif %}>5x5</option>
+                                </select>
+                            </div>
+                        </div>
+            
+                        <div>
+                            <label for="custom_description" class="block text-sm font-medium text-slate-700">
+                                Beschreibung (optional überschreiben)
+                            </label>
+                            <textarea id="custom_description" name="custom_description" rows="3"
+                                class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                                placeholder="Eigene kurze Beschreibung für diese Session...">{{ custom_description }}</textarea>
+                        </div>
+            
+                        <div>
+                            <div id="custom-items-block">
+                                Freie Liste / eigene Einträge
+                            </label>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Nur relevant für den Modus „Freie Liste“. Ein Eintrag pro Zeile.
+                            </p>
+                            <textarea id="custom_items" name="custom_items" rows="10"
+                                class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                                placeholder="z. B.&#10;Apfel&#10;Haus&#10;Bus&#10;...">{{ custom_items }}</textarea>
+                        </div>
+                    </div>
+            
+                    <aside id="numbers-block" class="rounded-xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                        <h3 class="text-base font-semibold text-slate-900">Zahlenbereich</h3>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                            Relevant für den Modus „Zahlen“. Für 4x4 werden 16 Werte benötigt, für 5x5 entsprechend 25.
+                        </p>
+            
+                        <div class="mt-5 space-y-4">
+                            <div>
+                                <label for="number_min" class="block text-sm font-medium text-slate-700">Von</label>
+                                <input id="number_min" name="number_min" type="number" value="{{ number_min }}"
+                                    class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200" />
+                            </div>
+            
+                            <div>
+                                <label for="number_max" class="block text-sm font-medium text-slate-700">Bis</label>
+                                <input id="number_max" name="number_max" type="number" value="{{ number_max }}"
+                                    class="mt-2 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200" />
+                            </div>
+                        </div>
+            
+                        <div class="mt-5 rounded-lg border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600">
+                            <p class="font-medium text-slate-700">Tipp</p>
+                            <p class="mt-1">
+                                Ein sinnvoller Start ist 0 bis 20 für A1. Das passt gut für 4x4 und bringt mehr Varianz.
+                            </p>
+                        </div>
+                    </aside>
+                </div>
+            
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="submit"
+                        class="inline-flex items-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800">
+                        Bingo-Session starten
+                    </button>
+            
+                    <a href="/admin/activities"
+                        class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
+                        Zurück
+                    </a>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const modeSelect = document.getElementById("mode");
+            const numbersBlock = document.getElementById("numbers-block");
+            const customBlock = document.getElementById("custom-items-block");
+
+            if (!modeSelect) return;
+
+            function updateVisibility() {
+                const mode = modeSelect.value;
+
+                // Zahlen
+                if (numbersBlock) {
+                    numbersBlock.classList.toggle("hidden", mode !== "numbers");
+                }
+
+                // Freie Liste
+                if (customBlock) {
+                    customBlock.classList.toggle("hidden", mode !== "custom");
+                }
+            }
+
+            // initial setzen (wichtig bei Reload / Fehlerfall)
+            updateVisibility();
+
+            // reagieren auf Änderung
+            modeSelect.addEventListener("change", updateVisibility);
+        })();
+    </script>
+</body>
+</html>
+
