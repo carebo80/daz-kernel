@@ -2,12 +2,27 @@
     hx-post="/admin/activities/session/{{ session.id }}/play"
     hx-trigger="change from:input[name='teacher_called_items']" hx-target="#teacher-board" hx-swap="outerHTML"
     hx-select="#teacher-board" class="mt-6">
+
+    <p class="mt-2 text-sm text-slate-500">
+        {{ teacher_called_items|length }} / {{ items|length }} Elemente aufgerufen
+    </p>
+    {% if teacher_last_called_item %}
+    <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-800">
+        Zuletzt: {{ teacher_last_called_item }}
+    </span>
+    {% endif %}
+    <div class="mb-4 flex flex-wrap items-center gap-3">
+        <button type="submit" name="action" value="random_pick"
+            class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50">
+            Zufälliges Item
+        </button>
+    </div>
     {% if grid_size == 4 %}
-    <div class="grid gap-3" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+    <div class="grid gap-1" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
         {% elif grid_size == 5 %}
-        <div class="grid gap-3" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
+        <div class="grid gap-1" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
             {% else %}
-            <div class="grid gap-3" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
+            <div class="grid gap-1" style="grid-template-columns: repeat(4, minmax(0, 1fr));">
                 {% endif %}
 
                 {% for item in items %}
@@ -17,7 +32,7 @@
                 <label class="block cursor-pointer">
                     <input type="checkbox" name="teacher_called_items" value="{{ idx }}" class="peer sr-only" {% if
                         checked %}checked{% endif %} />
-                    <div class="flex aspect-square items-center justify-center rounded-lg border p-3 text-center text-base font-semibold shadow-sm transition hover:bg-slate-50
+                    <div class="flex min-h-16 items-center justify-center rounded-md border px-2 py-2 text-center text-sm font-medium shadow-sm transition hover:bg-slate-50
                         {% if checked %}
                             border-emerald-500 bg-emerald-100 text-emerald-900
                         {% else %}

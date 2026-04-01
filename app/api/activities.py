@@ -196,9 +196,14 @@ def admin_activity_session(request: Request, session_id: str):
         {
             "id": str(p[0]),
             "display_name": p[1],
-            "joined_at": p[2],
-            "last_seen_at": p[3],
+            "joined_at": p[2].isoformat() if p[2] else None,
+            "last_seen_at": p[3].isoformat() if p[3] else None,
             "state": p[4] or {},
+            "visitenkarte": (p[4] or {}).get("visitenkarte", {}),
+            "submitted": bool((p[4] or {}).get("submitted")),
+            "bingo": (p[4] or {}).get("bingo", {}),
+            "marked_count": len((((p[4] or {}).get("bingo", {}) or {}).get("marked", [])) or []),
+            "has_bingo": bool((((p[4] or {}).get("bingo", {}) or {}).get("has_bingo"))),
         }
         for p in participants_raw
     ]
@@ -958,6 +963,7 @@ def start_configured_activity_session(
         conn.commit()
 
     return RedirectResponse(url=f"/admin/activities/session/{sess[0]}", status_code=303)
+
 @router.get("/admin/activities/session/{session_id}/play", response_class=HTMLResponse)
 def admin_activity_play(request: Request, session_id: str):
     with db() as conn:
@@ -1017,6 +1023,12 @@ def admin_activity_play(request: Request, session_id: str):
     raw_teacher_called_items = session["config"].get("teacher_called_items", [])
     teacher_called_items: list[int] = []
 
+    teacher_last_called_index = session["config"].get("teacher_last_called_index")
+    teacher_last_called_item = None
+
+    if isinstance(teacher_last_called_index, int) and 0 <= teacher_last_called_index < len(items):
+        teacher_last_called_item = items[teacher_last_called_index]
+
     for value in raw_teacher_called_items:
         try:
             teacher_called_items.append(int(value))
@@ -1032,13 +1044,17 @@ def admin_activity_play(request: Request, session_id: str):
             "grid_size": grid_size,
             "items": items,
             "teacher_called_items": teacher_called_items,
+            "teacher_last_called_index": teacher_last_called_index,
+            "teacher_last_called_item": teacher_last_called_item,
         },
     )
+
 @router.post("/admin/activities/session/{session_id}/play", response_class=HTMLResponse)
 def admin_activity_play_update(
     request: Request,
     session_id: str,
     teacher_called_items: list[str] | None = Form(None),
+    action: str = Form(""),
 ):
     teacher_called_items = teacher_called_items or []
 
@@ -1078,7 +1094,40 @@ def admin_activity_play_update(
             }
 
             config = session["config"]
+            items = config.get("items", [])
+
+            previous_called = set((config.get("teacher_called_items", []) or []))
+            current_called = set(called_indices)
+
+            raw_teacher_last_called_index = session["config"].get("teacher_last_called_index")
+            teacher_last_called_index = None
+
+            try:
+                if raw_teacher_last_called_index is not None:
+                    teacher_last_called_index = int(raw_teacher_last_called_index)
+            except (TypeError, ValueError):
+                teacher_last_called_index = None
+
+            # Zufälliges noch nicht markiertes Element hinzufügen
+            if action == "random_pick":
+                available_indices = [i for i in range(len(items)) if i not in current_called]
+                if available_indices:
+                    picked = random.choice(available_indices)
+                    called_indices.append(picked)
+                    called_indices = sorted(set(called_indices))
+                    teacher_last_called_index = picked
+            else:
+                # Bei normalem Klicken versuchen wir das neu gesetzte Feld zu erkennen
+                newly_added = [i for i in called_indices if i not in previous_called]
+                if newly_added:
+                    teacher_last_called_index = newly_added[-1]
+                else:
+                    # Falls nur abgewählt wurde und das letzte Item nicht mehr aktiv ist, leeren
+                    if teacher_last_called_index not in called_indices:
+                        teacher_last_called_index = None
+
             config["teacher_called_items"] = called_indices
+            config["teacher_last_called_index"] = teacher_last_called_index
 
             cur.execute(
                 """
